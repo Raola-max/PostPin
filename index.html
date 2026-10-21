@@ -262,10 +262,7 @@
     </div>
   </div>
 
-  <button type="button" onclick="alert('Coverage signal logged for NIPOST review.')">
-    Log Coverage Signal
-  </button>
-
+  <button type="button" id="export-btn">Export Coverage Report</button>
   <footer>
     Powered by the official <a href="https://postcode.gov.ng" target="_blank" rel="noopener">NIPOST Postcode API</a>
   </footer>
@@ -273,9 +270,9 @@
 
 <script>
   const stats = { total: 0, valid: 0, invalid: 0 };
+  const seenCodes = new Set();
   const input = document.querySelector('[data-postcode-input]');
   const badge = document.querySelector('[data-postcode-badge]');
-  let currentCode = "";
 
   function updateStats() {
     document.getElementById('stat-total').textContent = stats.total;
@@ -283,17 +280,12 @@
     document.getElementById('stat-invalid').textContent = stats.invalid;
   }
 
-  // Watch the input field. Every time it hits 11 chars, it's a new lookup.
   input.addEventListener('input', function() {
     const raw = input.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
-    
-    // Only trigger when we hit a full 11-character code, and it's a new code
-    if (raw.length === 11 && raw !== currentCode) {
-      currentCode = raw;
+    if (raw.length === 11 && !seenCodes.has(raw)) {
+      seenCodes.add(raw);
       stats.total++;
       updateStats();
-
-      // Wait for the widget to finish checking the API (or cache), then read the result
       setTimeout(function() {
         if (!badge) return;
         const text = badge.textContent || "";
@@ -303,13 +295,26 @@
           stats.invalid++;
         }
         updateStats();
-      }, 800); // 800ms is enough time for the debounce + API call
+      }, 800);
     }
-    
-    // If the user deletes characters, reset the current code tracker
-    if (raw.length < 11) {
-      currentCode = "";
-    }
+  });
+
+  // Export button
+  document.getElementById('export-btn').addEventListener('click', function() {
+    const report = {
+      generated_at: new Date().toISOString(),
+      lookups: stats.total,
+      verified: stats.valid,
+      gaps: stats.invalid,
+      codes_checked: Array.from(seenCodes)
+    };
+    const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "nipost-coverage-report.json";
+    a.click();
+    URL.revokeObjectURL(url);
   });
 </script>
 <script src="widget.js"></script>
