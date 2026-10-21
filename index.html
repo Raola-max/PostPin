@@ -273,7 +273,9 @@
 
 <script>
   const stats = { total: 0, valid: 0, invalid: 0 };
-  let lastText = "";
+  const input = document.querySelector('[data-postcode-input]');
+  const badge = document.querySelector('[data-postcode-badge]');
+  let currentCode = "";
 
   function updateStats() {
     document.getElementById('stat-total').textContent = stats.total;
@@ -281,28 +283,34 @@
     document.getElementById('stat-invalid').textContent = stats.invalid;
   }
 
-  // Watch the badge element for text changes
-  const badge = document.querySelector('[data-postcode-badge]');
-  if (badge) {
-    const observer = new MutationObserver(function () {
-      const text = (badge.textContent || "").trim();
-      // Only count when the message changes AND it's a final state
-      if (text === lastText) return;
-      if (!text) return;
-      if (text.includes("Checking")) return;   // ignore "checking" state
-      if (!text.includes("Postcode") && !text.includes("Valid") && !text.includes("Invalid")) return;
-
-      lastText = text;
+  // Watch the input field. Every time it hits 11 chars, it's a new lookup.
+  input.addEventListener('input', function() {
+    const raw = input.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+    
+    // Only trigger when we hit a full 11-character code, and it's a new code
+    if (raw.length === 11 && raw !== currentCode) {
+      currentCode = raw;
       stats.total++;
-      if (text.includes("Valid")) {
-        stats.valid++;
-      } else {
-        stats.invalid++;
-      }
       updateStats();
-    });
-    observer.observe(badge, { childList: true, subtree: true, characterData: true });
-  }
+
+      // Wait for the widget to finish checking the API (or cache), then read the result
+      setTimeout(function() {
+        if (!badge) return;
+        const text = badge.textContent || "";
+        if (text.includes("Valid") || text.includes("verified")) {
+          stats.valid++;
+        } else {
+          stats.invalid++;
+        }
+        updateStats();
+      }, 800); // 800ms is enough time for the debounce + API call
+    }
+    
+    // If the user deletes characters, reset the current code tracker
+    if (raw.length < 11) {
+      currentCode = "";
+    }
+  });
 </script>
 <script src="widget.js"></script>
 </body>
