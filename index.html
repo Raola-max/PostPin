@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PostPin — Postcode Coverage Layer</title>
+<link rel="icon" href="/favicon.ico" type="image/x-icon">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #141414;
+    --surface-2: #1c1c1c;
+    --border: #2a2a2a;
+    --text: #f5f5f5;
+    --text-dim: #a3a3a3;
+    --text-dimmer: #737373;
+    --indigo: #6366f1;
+    --indigo-hover: #818cf8;
+    --green: #34d399;
+    --green-bg: rgba(52, 211, 153, 0.1);
+    --green-border: rgba(52, 211, 153, 0.25);
+    --red: #f87171;
+    --red-bg: rgba(248, 113, 113, 0.1);
+    --red-border: rgba(248, 113, 113, 0.25);
+    --amber: #fbbf24;
+    --amber-bg: rgba(251, 191, 36, 0.1);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    margin: 0;
+    padding: 32px 16px;
+    min-height: 100vh;
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .banner {
+    background: var(--green-bg);
+    color: var(--green);
+    border: 1px solid var(--green-border);
+    padding: 10px 16px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+  .banner::before {
+    content: "";
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 10px var(--green);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    width: 100%;
+    max-width: 440px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  }
+
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 6px;
+    letter-spacing: -0.02em;
+  }
+  .sub {
+    color: var(--text-dim);
+    font-size: 14px;
+    margin: 0 0 24px;
+    line-height: 1.5;
+  }
+
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-dim);
+    margin: 0 0 8px;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    padding: 14px 16px;
+    font-size: 16px;
+    font-family: 'SF Mono', 'Monaco', monospace;
+    background: var(--bg);
+    color: var(--text);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+  input[type="text"]:hover { border-color: #3a3a3a; }
+  input[type="text"]:focus {
+    outline: none;
+    border-color: var(--indigo);
+    box-shadow: 0 0 0 4px rgba(99,102,241,0.15);
+    background: #0f0f0f;
+  }
+  input[type="text"]::placeholder { color: #4a4a4a; }
+
+  .hint {
+    font-size: 12px;
+    color: var(--text-dimmer);
+    margin-top: 10px;
+    line-height: 1.5;
+  }
+  .hint a {
+    color: var(--indigo-hover);
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .hint a:hover { text-decoration: underline; }
+
+  /* Stats panel */
+  .stats {
+    margin-top: 24px;
+    padding: 16px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .stats-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-dimmer);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+  }
+  .stat {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 8px;
+    text-align: center;
+  }
+  .stat-num {
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1;
+    font-family: 'SF Mono', 'Monaco', monospace;
+  }
+  .stat-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 6px;
+    opacity: 0.7;
+  }
+  .stat.total .stat-num { color: var(--text); }
+  .stat.valid .stat-num { color: var(--green); }
+  .stat.invalid .stat-num { color: var(--red); }
+  .stat.valid { border-color: var(--green-border); background: var(--green-bg); }
+  .stat.invalid { border-color: var(--red-border); background: var(--red-bg); }
+
+  button {
+    width: 100%;
+    margin-top: 20px;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: inherit;
+    background: var(--indigo);
+    color: #fff;
+    border: 0;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 14px rgba(99,102,241,0.3);
+  }
+  button:hover {
+    background: var(--indigo-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(99,102,241,0.4);
+  }
+  button:active { transform: translateY(0); }
+
+  footer {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text-dimmer);
+    text-align: center;
+  }
+  footer a {
+    color: var(--text-dim);
+    text-decoration: none;
+    border-bottom: 1px dotted #4a4a4a;
+  }
+  footer a:hover { color: var(--text); }
+</style>
+</head>
+<body>
+
+<div class="banner">
+  NIPOST Coverage Layer · Live
+</div>
+
+<div class="card">
+  <h1>Verify Postcode Coverage</h1>
+  <p class="sub">Test building-level data integrity across Nigeria in real time.</p>
+
+  <label for="postcode">Building Postcode</label>
+  <input type="text" id="postcode" data-postcode-input placeholder="LA-11-W06-TC-10" maxlength="20" autocomplete="off">
+  <div data-postcode-badge style="display:none;"></div>
+  <div class="hint">
+    Enter an 11-character code.
+    <a href="https://postcode.gov.ng" target="_blank" rel="noopener">Find yours at postcode.gov.ng →</a>
+  </div>
+
+  <div class="stats">
+    <div class="stats-label">📡 Live Coverage Signal</div>
+    <div class="stats-grid">
+      <div class="stat total">
+        <div class="stat-num" id="stat-total">0</div>
+        <div class="stat-label">Lookups</div>
+      </div>
+      <div class="stat valid">
+        <div class="stat-num" id="stat-valid">0</div>
+        <div class="stat-label">Verified</div>
+      </div>
+      <div class="stat invalid">
+        <div class="stat-num" id="stat-invalid">0</div>
+        <div class="stat-label">Gaps</div>
+      </div>
+    </div>
+  </div>
+
+  <button type="button" onclick="alert('Coverage signal logged for NIPOST review.')">
+    Log Coverage Signal
+  </button>
+
+  <footer>
+    Powered by the official <a href="https://postcode.gov.ng" target="_blank" rel="noopener">NIPOST Postcode API</a>
+  </footer>
+</div>
+
+<script>
+  const stats = { total: 0, valid: 0, invalid: 0 };
+
+  function updateStats() {
+    document.getElementById('stat-total').textContent = stats.total;
+    document.getElementById('stat-valid').textContent = stats.valid;
+    document.getElementById('stat-invalid').textContent = stats.invalid;
+  }
+
+  document.addEventListener('postcode:result', function (e) {
+    console.log('[coverage signal]', e.detail);
+    stats.total++;
+    
+    // If it's valid, increment valid. Otherwise (not_found, invalid_format, error), it's a gap.
+    if (e.detail.valid) {
+      stats.valid++;
+    } else {
+      stats.invalid++;
+    }
+    
+    updateStats();
+  });
+</script>
+<script src="widget.js"></script>
+</body>
+</html>
