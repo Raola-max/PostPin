@@ -8,7 +8,7 @@
   var CONFIG = {
     apiBase: "https://api.postcode.gov.ng",
     mockBase: "https://ng-postcode.oliha.dev",
-    
+
     apiKey: "nipost_pk_test_811878d17c6e19e147ae93352f68b2834814392532877cc1", 
     level: 1,
     demoMode: false,
@@ -18,6 +18,7 @@
     format: /^[A-Z0-9]{2}-[A-Z0-9]{2}-[A-Z0-9]{3}-[A-Z0-9]{2}-[A-Z0-9]{2}$/
   };
 
+  
   var cache = new Map();
 
   function isValidFormat(code) {
