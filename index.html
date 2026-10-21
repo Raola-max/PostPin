@@ -283,15 +283,26 @@
   document.addEventListener('postcode:result', function (e) {
     console.log('[coverage signal]', e.detail);
     stats.total++;
-    
-    // If it's valid, increment valid. Otherwise (not_found, invalid_format, error), it's a gap.
     if (e.detail.valid) {
       stats.valid++;
     } else {
       stats.invalid++;
     }
-    
-    
+    updateStats();
+  });
+
+  // Fallback: catch old event names too, in case widget.js hasn't updated
+  document.addEventListener('postcode:validated', function (e) {
+    console.log('[coverage signal - legacy]', e.detail);
+    stats.total++;
+    if (e.detail.valid) stats.valid++; else stats.invalid++;
+    updateStats();
+  });
+
+  document.addEventListener('postcode:error', function (e) {
+    console.log('[coverage signal - error]', e.detail);
+    stats.total++;
+    stats.invalid++;
     updateStats();
   });
 </script>
