@@ -11,14 +11,14 @@
 
     apiKey: "nipost_pk_test_811878d17c6e19e147ae93352f68b2834814392532877cc1", 
     level: 1,
-    demoMode: false,
+    demoMode: true,
     debounceMs: 500,
     inputSelector: "[data-postcode-input]",
     badgeSelector: "[data-postcode-badge]",
     format: /^[A-Z0-9]{2}-[A-Z0-9]{2}-[A-Z0-9]{3}-[A-Z0-9]{2}-[A-Z0-9]{2}$/
   };
 
-  
+
   var cache = new Map();
 
   function isValidFormat(code) {

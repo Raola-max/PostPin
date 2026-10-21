@@ -273,6 +273,7 @@
 
 <script>
   const stats = { total: 0, valid: 0, invalid: 0 };
+  let lastText = "";
 
   function updateStats() {
     document.getElementById('stat-total').textContent = stats.total;
@@ -280,31 +281,28 @@
     document.getElementById('stat-invalid').textContent = stats.invalid;
   }
 
-  document.addEventListener('postcode:result', function (e) {
-    console.log('[coverage signal]', e.detail);
-    stats.total++;
-    if (e.detail.valid) {
-      stats.valid++;
-    } else {
-      stats.invalid++;
-    }
-    updateStats();
-  });
+  // Watch the badge element for text changes
+  const badge = document.querySelector('[data-postcode-badge]');
+  if (badge) {
+    const observer = new MutationObserver(function () {
+      const text = (badge.textContent || "").trim();
+      // Only count when the message changes AND it's a final state
+      if (text === lastText) return;
+      if (!text) return;
+      if (text.includes("Checking")) return;   // ignore "checking" state
+      if (!text.includes("Postcode") && !text.includes("Valid") && !text.includes("Invalid")) return;
 
-  // Fallback: catch old event names too, in case widget.js hasn't updated
-  document.addEventListener('postcode:validated', function (e) {
-    console.log('[coverage signal - legacy]', e.detail);
-    stats.total++;
-    if (e.detail.valid) stats.valid++; else stats.invalid++;
-    updateStats();
-  });
-
-  document.addEventListener('postcode:error', function (e) {
-    console.log('[coverage signal - error]', e.detail);
-    stats.total++;
-    stats.invalid++;
-    updateStats();
-  });
+      lastText = text;
+      stats.total++;
+      if (text.includes("Valid")) {
+        stats.valid++;
+      } else {
+        stats.invalid++;
+      }
+      updateStats();
+    });
+    observer.observe(badge, { childList: true, subtree: true, characterData: true });
+  }
 </script>
 <script src="widget.js"></script>
 </body>
