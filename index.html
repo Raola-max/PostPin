@@ -273,6 +273,7 @@
   const seenCodes = new Set();
   const input = document.querySelector('[data-postcode-input]');
   const badge = document.querySelector('[data-postcode-badge]');
+  const pending = new Map(); // code -> true (waiting for result)
 
   function updateStats() {
     document.getElementById('stat-total').textContent = stats.total;
@@ -280,27 +281,49 @@
     document.getElementById('stat-invalid').textContent = stats.invalid;
   }
 
-  input.addEventListener('input', function() {
+  // Step 1: Count each unique code once, register it as pending
+  input.addEventListener('input', function () {
     const raw = input.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
     if (raw.length === 11 && !seenCodes.has(raw)) {
       seenCodes.add(raw);
+      pending.set(raw, true);
       stats.total++;
       updateStats();
-      setTimeout(function() {
-        if (!badge) return;
-        const text = badge.textContent || "";
-        if (text.includes("Valid") || text.includes("verified")) {
-          stats.valid++;
-        } else {
-          stats.invalid++;
-        }
-        updateStats();
-      }, 800);
     }
   });
 
+  // Step 2: Watch the badge. When it settles on a final state, resolve any pending code.
+  if (badge) {
+    const observer = new MutationObserver(function () {
+      const text = (badge.textContent || "").trim();
+      if (!text) return;
+      if (text.includes("Checking")) return; // ignore intermediate state
+
+      // Only count when we see a definite result
+      let isValid = null;
+      if (text.includes("Valid") || text.includes("verified")) {
+        isValid = true;
+      } else if (text.includes("not found") || text.includes("Data Gap") || text.includes("Invalid") || text.includes("invalid")) {
+        isValid = false;
+      } else {
+        return; // unknown state, ignore
+      }
+
+      // Resolve the most recent pending code
+      const codes = Array.from(pending.keys());
+      if (codes.length === 0) return;
+      const code = codes[codes.length - 1];
+      pending.delete(code);
+
+      if (isValid) stats.valid++;
+      else stats.invalid++;
+      updateStats();
+    });
+    observer.observe(badge, { childList: true, subtree: true, characterData: true });
+  }
+
   // Export button
-  document.getElementById('export-btn').addEventListener('click', function() {
+  document.getElementById('export-btn').addEventListener('click', function () {
     const report = {
       generated_at: new Date().toISOString(),
       lookups: stats.total,
